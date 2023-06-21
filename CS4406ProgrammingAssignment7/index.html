@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <script type="text/javascript" src="https://getfirebug.com/firebug-lite-debug.js"></script>
+  <meta name="description" content="CS4406 Computer Graphics - Programming Assignment 7" />
+  <meta charset="utf-8" />
+  <title>CS4406 Computer Graphics - Programming Assignment 7</title>
+  <meta charset=utf-8 />
+  <title>CS4406 Computer Graphics - Programming Assignment 7</title>
+  <style id="jsbin-css"></style>
+</head>
+
+<body>
+  <div id="container">
+  </div>
+</body>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js">
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js">
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r124/three.js">
+</script>
+
+<script src="https://cdn.rawgit.com/mrdoob/three.js/master/examples/js/controls/OrbitControls.js">
+</script>
+
+<script src="http://uopeopleweb.com/js/math.js">
+</script>
+
+<script src="http://uopeopleweb.com/js/Detector.js">
+</script>
+
+<!----Java Script code to create scene and camera---->
+<script type="text/javascript">
+
+  // set the scene size
+  var WIDTH = 500, HEIGHT = 500;
+
+  // set some camera attributes
+  var VIEW_ANGLE = 45, ASPECT = WIDTH / HEIGHT, NEAR = .01, FAR = 1000;
+
+  // get the DOM element to attach
+  var $container = $('#container');
+
+  // create a WebGL renderer, camera, and a scene
+  var renderer = new THREE.WebGLRenderer();
+  var scene = new THREE.Scene();
+  var clock = new THREE.Clock();
+  var camera = new THREE.PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR);
+
+  // set camera position
+  camera.up.set(0, 0, 1);
+  camera.position.y = 15.0 * Math.cos(Math.PI / 6);
+  camera.position.z = 15.0 * Math.sin(Math.PI / 6);
+  var cameraDist = camera.position.length();
+
+  // add the camera to the scene
+  scene.add(camera);
+
+  // set up the camera controls. Please keep in mind that what this does is move the entire scene around. Because the entire scene is moving the position of the camera and lights in relation to objects within the scene doesn't change so the lighting on the surface of the object(s) will not change either
+  var cameraControls = new THREE.OrbitControls(camera, renderer.domElement);
+  cameraControls.addEventListener('mousemove', renderer);
+  cameraControls.autoRotate = false;
+
+  // start the renderer
+  renderer.setSize(WIDTH, HEIGHT);
+
+  // attach the render-supplied DOM element
+  $container.append(renderer.domElement);
+
+  // add ambient lighting.
+  var ambientLight = new THREE.AmbientLight(0xffffff);
+  //add light to the scene
+  scene.add(ambientLight);
+
+  //hyperbolic parabaloic function in the form of f(x,y) = x^2-y^2 to create the shape
+  function f(a, b, q) {
+    var x = 4 * a - 2;
+    var y = 4 * b - 2;
+    q.set(x, y, (x * x) - (y * y));
+  }
+
+  //constrain input values between -1 and 1
+  var x_min = -1.0;
+  var y_min = -1.0;
+  var x_max = 1.0;
+  var y_max = 1.0;
+
+  //color the parabola
+  function parabolaColor(side) {
+    return new THREE.Color(side.x, side.y, side.z);
+  }
+
+  //color the side faces (majidgomainy, n.d.)
+  function sideColors(geometry) {
+    for (var i = 0; i < geometry.faces.length; i++) {
+      var face = geometry.faces[i];
+      face.vertexColors = [parabolaColor(geometry.vertices[face.a]),
+      parabolaColor(geometry.vertices[face.b]),
+      parabolaColor(geometry.vertices[face.c])];
+    }
+  }//end parabolaColor function
+
+  //create a grid plane on the x and y axis, color-white, slightly transparent
+  function plane(width, depth) {
+    var grid = new THREE.Group();
+    var material = new THREE.LineBasicMaterial({color: 0xffffff, transparent: true, opacity: 0.5});
+
+    //create a line structure for the grid plane on x axis
+    for (var i = 0; i <= depth; i += 1) {
+      var f = (i / depth) - 0.5;
+      var geometry = new THREE.Geometry();
+      geometry.vertices.push(new THREE.Vector3(f * width, -width * 0.5, 0), new THREE.Vector3(f * width, width * 0.5, 0));
+      var line = new THREE.Line(geometry, material);
+      grid.add(line); //add line structure to grid
+    }
+
+    //create a line structure for the grid plane on y axis
+    for (var i = 0; i <= depth; i += 1) {
+      var f = (i / depth) - 0.5;
+      var geometry = new THREE.Geometry();
+      geometry.vertices.push(new THREE.Vector3(-width * 0.5, f * width, 0), new THREE.Vector3(width * 0.5, f * width, 0));
+      var line = new THREE.Line(geometry, material);
+      grid.add(line); //add line structure to grid
+    }
+
+    //return grid info to plane function
+    return grid;
+  }//end plane function
+
+  // create parabola geometry, add material and side colors
+  var pGeometry = new THREE.ParametricGeometry(f, 100, 100);
+  sideColors(pGeometry);
+  var pMaterial = new THREE.MeshBasicMaterial({color: 0xaaaaaa, side: THREE.DoubleSide, vertexColors: THREE.VertexColors});
+
+  //Create parabola mesh
+  var pMesh = new THREE.Mesh(pGeometry, pMaterial);
+  scene.add(pMesh); //add parabola to the scene
+
+  //call a new instance of plane and add it to the scene 
+  var newPlane = plane(10, 20);
+  scene.add(newPlane);
+
+  //Create axis helper arrow geometry
+  var arrowLine = new THREE.CylinderGeometry(0.03, 0.03, 0.3, 20);
+  var arrowHead = new THREE.ConeGeometry(0.05, 0.2, 20);
+
+  //create axis arrow 
+  function axisArrow(color) {
+    var arrow = new THREE.Group();
+    //create arrow mesh
+    var arrowMaterial = new THREE.MeshPhongMaterial({color: color, specular: 0x222222, shininess: 100})
+    //set arrow line with mesh and geometry
+    var line = new THREE.Mesh(arrowLine, arrowMaterial);
+    //set line possition
+    line.position.set(0, 0.125, 0);
+    //add line to the arrow
+    arrow.add(line);
+    //set arrow head with mesh and geometry
+    var head = new THREE.Mesh(arrowHead, arrowMaterial);
+    //set head possition
+    head.position.set(0, 0.275, 0);
+    //add head to the arrow
+    arrow.add(head);
+    //return arrow to the axis arrow function
+    return arrow;
+  } //end axis arrow function
+
+  //create an axis helper
+  function axisHelper() {
+    var helper = new THREE.Group();
+    //color each arrow with (R,G,B)
+    //red x arrow
+    var xAxis = axisArrow(new THREE.Color(255, 0, 0));
+    //blue y arrow 
+    var yAxis = axisArrow(new THREE.Color(0, 255, 0));
+    //green z arrow
+    var zAxis = axisArrow(new THREE.Color(0, 0, 255));
+    //set arrow rotation to match axis rotation 
+    xAxis.rotateZ(-Math.PI * 0.5);
+    zAxis.rotateX(Math.PI * 0.5);
+    //add axis' to the arrow
+    helper.add(xAxis);
+    helper.add(yAxis);
+    helper.add(zAxis);
+    //return helper to the axis helper function
+    return helper;
+  }
+
+  //call an instance of axis helper to set an axis for the camera
+  var axisCamera = axisHelper();
+  //add axis camera helper to the scene
+  scene.add(axisCamera);
+
+  //call an instance of axis helper to set an axis for the center of the scene
+  var axisPoint = axisHelper();
+  //add axis point helper to the scene
+  scene.add(axisPoint);
+
+  //render the scene
+  function animate() {
+    requestAnimationFrame(animate);
+    render();
+  }
+
+  //render camera (majidgomainy, n.d.)
+  function render() {
+    cameraControls.update();
+    //set axis helper to camera postion
+    var cam_x = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+    var cam_y = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
+    var cam_z = new THREE.Vector3(0, 0, 1).applyQuaternion(camera.quaternion);
+    //scale camera
+    axisCamera.scale.set(0.015, 0.015, 0.015);
+    //position camera
+    axisCamera.position.copy(camera.position);
+    axisCamera.position.addScaledVector(cam_x, -0.01875);
+    axisCamera.position.addScaledVector(cam_y, 0.01875);
+    axisCamera.position.addScaledVector(cam_z, -0.06);
+    //render scene and camera controls
+    renderer.render(scene, camera);
+  }
+  animate();
+</script>
+
+</html>

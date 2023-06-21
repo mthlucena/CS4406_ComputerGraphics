@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <script type="text/javascript" src="https://getfirebug.com/firebug-litedebug.js"></script>
+  <meta name="description" content="CS4406 Computer Graphics - Programming Assignment 4" />
+  <meta charset="utf-8" />
+  <title>CS4406 Computer Graphics - Programming Assignment 4</title>
+  <meta charset=utf-8 />
+  <title>CS4406 Computer Graphics - Programming Assignment 4</title>
+  <style id="jsbin-css"></style>
+</head>
+
+<body>
+  <div id="container"></div>
+</body>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js"></script>
+<script src="http://uopeopleweb.com/js/dat.gui.min.js"></script>
+<script src="https://threejs.org/build/three.js"></script>
+<script src="https://cdn.rawgit.com/mrdoob/three.js/master/examples/js/controls/OrbitControls.js"></script>
+<script src="http://uopeopleweb.com/js/math.js"></script>
+<script src="http://uopeopleweb.com/js/Detector.js"></script>
+<script type="text/javascript">
+  // set the scene size
+  var WIDTH = 600, HEIGHT = 600;
+  // set some camera attributes
+  var VIEW_ANGLE = 45, ASPECT = WIDTH / HEIGHT, NEAR = 1, FAR = 1000;
+  // get the DOM element to attach to
+  var $container = $('#container');
+  // create a WebGL renderer, camera, and a scene
+  // NOTE: for the assignment in Unit 4 where you need to use a texture, or in any other assignment where a texture is required
+  // you should deactivate the Detector and use ONLY the CanvasRenderer. There are some issues in using waht are called Cross Domain images for
+  // for textures. You can get more details by looking up WebGL and CORS using Google search. I have included some code below that will
+  // get around this issue that you can use.
+
+  var renderer = new THREE.WebGLRenderer();
+  var scene = new THREE.Scene();
+  var clock = new THREE.Clock();
+  var camera = new THREE.PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR);
+  // the camera starts at 0,0,0 so pull it back
+  // the camera starts at 0,0,0 so pull it back for some assignments you may need to adjust this value
+  // some distance to make the scene visible properly
+  camera.position.z = 60;
+  // add the camera to the scene
+  scene.add(camera)
+
+  // set up the camera controls. Please keep in mind that what this does is move the entire scene around.
+  // because the entire scene is moving the position of the camera and lights in relation to objects within
+  // the scene doesn't change so the lighting on the surface of the object(s) will not change either
+  var cameraControls = new THREE.OrbitControls(camera, renderer.domElement);
+  cameraControls.addEventListener('mousemove', renderer);
+
+  // start the renderer
+  renderer.setSize(WIDTH, HEIGHT);
+  // enable shadow in renderer
+  renderer.shadowMap.enabled = true;
+  // set a soft shadow for renderer (default THREE.PCFShadowMap)
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  // attach the render-supplied DOM element
+  $container.append(renderer.domElement);
+  //
+  // END OF THE STANDARD CODE FOR THE ASSIGNMENT
+  // Following this is where you must place your own custom code to complete the assignment
+  // Here we create the material for cylinder1 and texture for the material is loaded from a link with a loader
+  const loader = new THREE.TextureLoader();
+  var cylinder1Material = new THREE.MeshLambertMaterial(
+    {map: loader.load('https://upload.wikimedia.org/wikipedia/commons/9/94/Blue_wool_texture.png'), wireframe: false, side: THREE.DoubleSide});
+
+  // the material for cylinder2 is created here using yellow with 30% opacity
+  var cylinder2Material = new THREE.MeshLambertMaterial(
+    {
+      color: 0xFFDD00, opacity: 0.3, transparent: true, side: THREE.DoubleSide
+    });
+
+  // Here we are creating the material for cylinder4 using red and opaque
+  var cylinder4Material = new THREE.MeshPhongMaterial(
+    {
+      color: 0xFF0000, wireframe: false, side: THREE.DoubleSide
+    });
+
+  // Here we create the material for cylinder3 using violet and opaque
+  var cylinder3Material = new THREE.MeshLambertMaterial(
+    {
+      color: 0xFF00DD, wireframe: false, side: THREE.DoubleSide
+    });
+
+  // We will be using #D object of cylinder
+  // Here we create the cylinder geometry
+  var cylinderGeometry = new THREE.CylinderGeometry(5, 5, 12, 35);
+
+  // The applcation of the geometry and material to cylinder1
+  // positioning the cylinder to top left corner
+  var cylinder1 = new THREE.Mesh(cylinderGeometry, cylinder1Material);
+  cylinder1.position.x = -12;
+  cylinder1.position.y = 12;
+
+  // Here we are applying the geometry and material to the cylinder2
+  // positioning the cylinder to top right corner
+  var cylinder2 = new THREE.Mesh(cylinderGeometry, cylinder2Material);
+  cylinder2.position.x = 12;
+  cylinder2.position.y = 12;
+
+  // Application of the geometry and material to the cylinder3
+  // positioning of the cylinder to bottom right corner
+  var cylinder3 = new THREE.Mesh(cylinderGeometry, cylinder3Material);
+  cylinder3.position.x = 12;
+  cylinder3.position.y = -12;
+
+  // The application of the geometry and material to the cylinder4
+  // The positioning the cylinder to bottom left corner
+  var cylinder4 = new THREE.Mesh(cylinderGeometry, cylinder4Material);
+  cylinder4.position.x = -12;
+  cylinder4.position.y = -12;
+
+  // Adding all the cylinders to the scene
+  scene.add(cylinder1, cylinder2, cylinder3, cylinder4);
+  // Creating a directional light here
+  var Dlight = new THREE.DirectionalLight(0xffffff, 1, 100);
+
+  Dlight.position.set(0, 5, 5);
+
+  scene.add(Dlight);
+
+  // Creating a point light that casts blue light
+
+  var Plight = new THREE.PointLight(0x0000DD, 10, 10);
+
+  Plight.position.set(8, -18, 8);
+  // Adding light to the scene
+  scene.add(Plight);
+
+
+  Plight.target = cylinder3;
+
+  // Here adding an ambient light to make the whole scene lighter
+  var light = new THREE.AmbientLight(0x404040);
+  scene.add(light);
+
+
+  function render() {
+    cameraControls.update();
+    renderer.render(scene, camera);
+  }
+
+  function animate() {
+    requestAnimationFrame(animate);
+    //rotate cylinder, two clock wise and two counter clockwise
+    cylinder1.rotation.z -= 0.05;
+    cylinder2.rotation.z += 0.05;
+    cylinder3.rotation.z -= 0.05;
+    cylinder4.rotation.z += 0.05;
+    //scale and transform cylinder1
+    var t = clock.getElapsedTime();
+
+    if (t >= 4.0) {
+      clock = new THREE.Clock;
+      cylinder1.scale.set(1, 1, 1);
+    }
+    else {
+      cylinder1.scale.x = 1 - (t / 1.0);
+      cylinder1.scale.y = 1 - (t / 1.0);
+      cylinder1.scale.z = 1 - (t / 1.0);
+    }
+    // calls render function
+    render();
+  }
+  // calling the animate function to start the animation
+  animate();
+</script>
+
+</html>

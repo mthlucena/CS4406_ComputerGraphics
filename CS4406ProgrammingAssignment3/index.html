@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <script type="text/javascript" src="https://getfirebug.com/firebug-lite-debug.js"></script>
+  <meta name="description" content="CS4406 Computer Graphics - Assignment-3" />
+  <meta charset="utf-8" />
+  <title>CS4406 Computer Graphics - Programming Assignment Unit 3</title>
+  <meta charset=utf-8 />
+  <title>CS4406 Computer Graphics - Programming Assignment 3</title>
+  <style id="jsbin-css">
+  </style>
+</head>
+
+<body>
+  <div id="container"></div>
+</body>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js"></script>
+<script src="http://uopeopleweb.com/js/dat.gui.min.js"></script>
+<script src="https://threejs.org/build/three.js"></script>
+<script src="https://cdn.rawgit.com/mrdoob/three.js/master/examples/js/controls/OrbitControls.js"></script>
+<script src="http://uopeopleweb.com/js/math.js"></script>
+<script src="http://uopeopleweb.com/js/Detector.js"></script>
+<script type="text/javascript">
+  // set the scene size
+  var WIDTH = 500, HEIGHT = 500;
+
+  // set some camera attributes
+  var VIEW_ANGLE = 45, ASPECT = WIDTH / HEIGHT, NEAR = 1, FAR = 1000;
+
+  // get the DOM element to attach to
+  var $container = $('#container');
+
+  // creating a WebGL renderer, camera, and a scene
+
+  var renderer = new THREE.WebGLRenderer();
+  var scene = new THREE.Scene();
+  var clock = new THREE.Clock();
+  var camera = new THREE.PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR);
+  // the camera starts at 0,0,0 so pull it back
+  // some distance to make the scene visible properly
+  camera.position.z = 250;
+  // add the camera to the scene
+  scene.add(camera)
+
+  // setting up the camera controls.  
+  var cameraControls = new THREE.OrbitControls(camera, renderer.domElement);
+  cameraControls.addEventListener('mousemove', renderer);
+
+  // starting the renderer
+  renderer.setSize(WIDTH, HEIGHT);
+  // enable shadow in renderer
+  renderer.shadowMap.enabled = true;
+  // set a soft shadow for renderer (default THREE.PCFShadowMap)
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  // attach the render-supplied DOM element
+  $container.append(renderer.domElement);
+
+
+  // Sphere Material = MeshLambert
+  // Color = BLUE ==> 0X0000FF
+  var sphereMaterial = new THREE.MeshLambertMaterial(
+    {
+      color: 0x0000ff, wireframe: false, side: THREE.DoubleSide
+    });
+
+  // I chose the Sphere to represent in this assignment
+  // Create Sphere Geometry with diameter = 20 and 36 separations 
+  var sphereGeometry = new THREE.SphereGeometry(20, 36, 36);
+
+  // Create Sphere with sphereGeometry and sphereMaterial  
+  var sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+  // Create shadow effect for the sphere on the plane
+  sphere.castShadow = true;
+  // Avoids creation of shadow from other objects to the sphere
+  sphere.receiveShadow = false;
+  // Adds the sphere created to the scene
+  scene.add(sphere);
+
+  // Creates ambient light object 
+  var ambientLight = new THREE.DirectionalLight(0xffffaa, 1);
+  ambientLight.position.set(-1, 1, 1);
+  // Does not produce shadow from the ambient light to the sphere
+  ambientLight.castShadow = false;
+  // Adds the ambient light created to the scene
+  scene.add(ambientLight);
+
+  // Creates point light fixed in the top left of the screen with the color Yellow ==> 0xffffaa, as required
+  const plight = new THREE.PointLight(0xffffaa, 0.75, 150);
+  plight.position.set(-95, 95, 10);
+  plight.castShadow = true;
+  scene.add(plight);
+
+  // Creates a plane behind the sphere on which the sphere will produce shadow upon
+  var planeGeometry = new THREE.PlaneBufferGeometry(600, 600, 36, 36);
+  var planeMaterial = new THREE.MeshStandardMaterial({color: 0xffffff})
+  var plane = new THREE.Mesh(planeGeometry, planeMaterial);
+  // Produces shadow from the ball to the plane, so it receives
+  plane.receiveShadow = true;
+  // Adds the created plane to the scene
+  scene.add(plane);
+
+  // Sets sphere's x-direction, y-direction and speed per frame
+  // these variables will be used in animation
+  var dirX = 1;
+  var dirY = 2;
+  var speed = 1.1;
+
+  // animate function calls requestAnimationFrame to call animate   
+  // this creates a loop that will render the scene again
+  // whenever something within the scene changes
+
+  function render() {
+    cameraControls.update();
+    renderer.render(scene, camera);
+  }
+
+  function animate() {
+    requestAnimationFrame(animate);
+    // animate the sphere in y direction
+    sphere.position.y += dirY * speed;
+    // animate the sphere in x direction
+    sphere.position.x += dirX * speed;
+    // The sphere changes direction after hitting the Left wall ==> The color changes to Red.
+    if (sphere.position.x <= -73) {
+      dirX = -dirX;
+      sphere.material.color.setHex(0xff0000);
+    }
+    // The sphere changes direction after hitting the Right wall ==> The color changes to Green
+    if (sphere.position.x >= 73) {
+      dirX = -dirX;
+      sphere.material.color.setHex(0x00ff00);
+    }
+    // The sphere changes direction after hitting the Bottom wall ==> The color changes to Yellow
+    if (sphere.position.y <= -73) {
+      dirY = -dirY;
+      sphere.material.color.setHex(0xffff00);
+    }
+    // The sphere changes direction after hitting the top wall ==> The color changes to Blue back again
+    if (sphere.position.y >= 73) {
+      dirY = -dirY;
+      sphere.material.color.setHex(0x0000ff);
+    }
+    // Calls render function
+    render();
+  }
+
+  // Calls animate and starts to animate the output scene with the camera set
+  animate();
+</script>
+
+</html>
